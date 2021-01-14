@@ -1,4 +1,6 @@
 # react_chatbot_serverless
+using reactjs , aws s3 with cloudfront for web hosting , route53 , ACM , lambda , dyanomodb , api gateway and react-simple-chatbot library
+
 
 * update serverless.yaml
 
@@ -50,5 +52,6 @@ react_chatbot_serverless/react_chatbot/src/components/chatbot/SimpleForm.js
 
 
 ```
+
 ![Screenshot](Screenshot.png)
 
