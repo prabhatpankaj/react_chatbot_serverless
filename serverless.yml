@@ -1,0 +1,125 @@
+service: serverlesschatbot
+frameworkVersion: "2"
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  memorySize: 1024
+  timeout: 29
+  stage: ${opt:stage,'dev'}
+  region: ap-south-1
+  lambdaHashingVersion: 20201221
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+      Resource: "*"
+
+  environment:
+    RESPONSES_TABLE: "${self:service}-responses-${opt:stage, self:provider.stage}"
+
+plugins:
+  - serverless-s3-sync
+
+custom:
+  stages:
+    - dev
+    - prod
+  bucketName:
+    dev: mybucketdev
+    prod: mybucketprod
+  alliesName:
+    dev: "qa.domain.com,dev.domain.com"
+    prod: "domain.com,www.domain.com"
+  s3Sync:
+    - bucketName: ${self:custom.bucketName.${self:provider.stage}}
+      localDir: react_chatbot/build/
+
+resources:
+  Resources:
+    ReactAppBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.bucketName.${self:provider.stage}}
+        AccessControl: PublicRead
+        WebsiteConfiguration:
+          IndexDocument: index.html
+          ErrorDocument: index.html
+    S3AccessPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket:
+          Ref: ReactAppBucket
+        PolicyDocument:
+          Statement:
+            - Sid: PublicReadGetObject
+              Effect: Allow
+              Principal: "*"
+              Action:
+                - s3:GetObject
+              Resource: arn:aws:s3:::${self:custom.bucketName.${self:provider.stage}}/*
+    CloudFrontDistribution:
+      Type: AWS::CloudFront::Distribution
+      Properties:
+        DistributionConfig:
+          Origins:
+            - DomainName: ${self:custom.bucketName.${self:provider.stage}}.s3-website.ap-south-1.amazonaws.com
+              Id: ReactApp
+              CustomOriginConfig:
+                HTTPPort: 80
+                HTTPSPort: 443
+                OriginProtocolPolicy: https-only
+          Enabled: "true"
+          DefaultRootObject: index.html
+          CustomErrorResponses:
+            - ErrorCode: 404
+              ResponseCode: 200
+              ResponsePagePath: /index.html
+          DefaultCacheBehavior:
+            AllowedMethods:
+              - DELETE
+              - GET
+              - HEAD
+              - OPTIONS
+              - PATCH
+              - POST
+              - PUT
+            TargetOriginId: ReactApp
+            ForwardedValues:
+              QueryString: "false"
+              Cookies:
+                Forward: none
+            ViewerProtocolPolicy: redirect-to-https
+          Aliases:
+            "Fn::Split":
+              - ","
+              - ${self:custom.alliesName.${self:provider.stage}}
+          ViewerCertificate:
+            AcmCertificateArn: arn:aws:acm:us-east-1:myawsid:certificate/65e701da----------
+            SslSupportMethod: sni-only
+
+    ResponsesDynamoDbTable:
+      Type: "AWS::DynamoDB::Table"
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "id"
+            KeyType: "HASH"
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:provider.environment.RESPONSES_TABLE}
+
+functions:
+  submitResponse:
+    handler: handler_response.submitResponse
+    description: Submits response
+    events:
+      - http:
+          path: responses/accept
+          method: post
+          cors: true

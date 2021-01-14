@@ -1,0 +1,29 @@
+{
+    "name": "react_chatbot_serverless",
+    "version": "1.0.0",
+    "description": "serverless chatbot",
+    "main": "handler_response.js",
+    "scripts": {
+        "deploydev": "serverless deploy --stage=dev",
+        "deployprod": "serverless deploy --stage=prod"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/prabhatpankaj/react_chatbot_serverless.git"
+    },
+    "author": "prabhat pankaj",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/prabhatpankaj/react_chatbot_serverless/issues"
+    },
+    "homepage": "https://github.com/prabhatpankaj/react_chatbot_serverless#readme",
+    "dependencies": {
+        "aws-sdk": "^2.824.0",
+        "bluebird": "^3.7.2",
+        "serverless": "^2.17.0",
+        "uuid": "^8.3.2"
+    },
+    "devDependencies": {
+        "serverless-s3-sync": "^1.15.0"
+    }
+}
