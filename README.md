@@ -38,3 +38,15 @@ const {
   } = requestBody;
   
 ```
+
+* update business logic in frontend 
+
+```
+Update api gateway api endpoint in 
+react_chatbot_serverless/react_chatbot/src/components/chatbot/Post.js
+
+update chatbot steps , css in 
+react_chatbot_serverless/react_chatbot/src/components/chatbot/SimpleForm.js
+
+
+```
